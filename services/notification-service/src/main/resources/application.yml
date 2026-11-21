@@ -1,0 +1,41 @@
+# Defaults point at localhost so the service also runs from an IDE against `docker compose up`
+# infrastructure. docker-compose.yml overrides them with environment variables.
+server:
+  port: 8084
+
+spring:
+  application:
+    name: notification-service
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    username: app
+    password: app
+    listener:
+      simple:
+        observation-enabled: true
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: 1025
+
+app:
+  mail:
+    from: noreply@blocks-sample.local
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  tracing:
+    sampling:
+      probability: 1.0
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTLP_BASE_URL:http://localhost:4318}/v1/traces
+  otlp:
+    metrics:
+      export:
+        url: ${OTLP_BASE_URL:http://localhost:4318}/v1/metrics
+        step: 10s

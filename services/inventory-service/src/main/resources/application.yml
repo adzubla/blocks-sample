@@ -1,0 +1,49 @@
+# Defaults point at localhost so the service also runs from an IDE against `docker compose up`
+# infrastructure. docker-compose.yml overrides them with environment variables.
+server:
+  port: 8082
+
+spring:
+  application:
+    name: inventory-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/inventory
+    username: inventory_svc
+    password: inventory_svc
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+    consumer:
+      group-id: inventory-service
+      auto-offset-reset: earliest
+    # Propagates the trace across Kafka.
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
+  mvc:
+    # TODO(error-handler): Spring's default RFC 9457 bodies for now, with no stable error codes.
+    problemdetails:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  tracing:
+    sampling:
+      probability: 1.0
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTLP_BASE_URL:http://localhost:4318}/v1/traces
+  otlp:
+    metrics:
+      export:
+        url: ${OTLP_BASE_URL:http://localhost:4318}/v1/metrics
+        step: 10s

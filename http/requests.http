@@ -1,0 +1,66 @@
+### Demo requests (IntelliJ HTTP client / VS Code REST Client).
+### Each order's status settles a moment after it's placed. Poll GET /orders/{id}.
+
+### Catalog
+GET http://localhost:8082/products
+
+### 1. Happy path: total under 1000 → CONFIRMED
+POST http://localhost:8081/orders
+Content-Type: application/json
+
+{
+  "customerEmail": "ana@example.com",
+  "items": [
+    { "sku": "KEYBOARD", "quantity": 1 },
+    { "sku": "MOUSE", "quantity": 2 }
+  ]
+}
+
+### 2. Out of stock (only 3 monitors) → CANCELLED, stock unchanged
+POST http://localhost:8081/orders
+Content-Type: application/json
+
+{
+  "customerEmail": "bob@example.com",
+  "items": [ { "sku": "MONITOR", "quantity": 5 } ]
+}
+
+### 3. Payment declined (total above 1000) → CANCELLED, stock released
+POST http://localhost:8081/orders
+Content-Type: application/json
+
+{
+  "customerEmail": "carol@example.com",
+  "items": [ { "sku": "LAPTOP", "quantity": 1 } ]
+}
+
+### 4. Unknown product → 400, rejected synchronously
+POST http://localhost:8081/orders
+Content-Type: application/json
+
+{
+  "customerEmail": "dan@example.com",
+  "items": [ { "sku": "NOPE", "quantity": 1 } ]
+}
+
+### 5. Invalid request → 400 (Spring's default ProblemDetail, TODO(error-handler))
+POST http://localhost:8081/orders
+Content-Type: application/json
+
+{ "customerEmail": "not-an-email", "items": [] }
+
+### 6. Idempotency flaw: send this twice → two orders. TODO(idempotency)
+POST http://localhost:8081/orders
+Content-Type: application/json
+X-Idempotency-Key: demo-key-1
+
+{
+  "customerEmail": "erin@example.com",
+  "items": [ { "sku": "MOUSE", "quantity": 1 } ]
+}
+
+### Orders
+GET http://localhost:8081/orders
+
+### Payments
+GET http://localhost:8083/payments
